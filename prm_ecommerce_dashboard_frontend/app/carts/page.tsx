@@ -7,8 +7,8 @@ import {
   VerticalDotsIcon,
 } from "@/components/icons";
 import { capitalize } from "@/libs/utils";
-import productService from "@/services/product-service";
-import { Product } from "@/types/product";
+import cartService from "@/services/cart-service";
+import { Cart } from "@/types/cart";
 import {
   Button,
   ChipProps,
@@ -37,7 +37,7 @@ import {
 import React, { useEffect, useState } from "react";
 import { columns, statusOptions } from "./data";
 import Image from "next/image";
-import { AddOrUpdateProduct } from "./add-or-update-product";
+import { AddOrUpdateCart } from "./add-or-update-cart";
 
 const statusColorMap: Record<string, ChipProps["color"]> = {
   active: "success",
@@ -46,16 +46,13 @@ const statusColorMap: Record<string, ChipProps["color"]> = {
 };
 
 const INITIAL_VISIBLE_COLUMNS = [
-  "image",
-  "title",
-  "price",
-  "category",
-  "description",
+  "userId",
+  "date",
   "actions",
 ];
 
 export default function App() {
-  const [products, setProducts] = useState<Product[]>([]); // Khởi tạo state cho products
+  const [carts, setCarts] = useState<Cart[]>([]); // Khởi tạo state cho carts
 
   const [filterValue, setFilterValue] = React.useState("");
   const [selectedKeys, setSelectedKeys] = React.useState<Selection>(
@@ -79,9 +76,9 @@ export default function App() {
     onOpenChange: onOpenChangeDelete,
   } = useDisclosure();
 
-  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [selectedCart, setSelectedCart] = useState<Cart | null>(null);
 
-  const pages = Math.ceil(products.length / rowsPerPage);
+  const pages = Math.ceil(carts.length / rowsPerPage);
 
   const hasSearchFilter = Boolean(filterValue);
 
@@ -95,68 +92,69 @@ export default function App() {
 
   // useEffect để fetch dữ liệu khi component mount
   useEffect(() => {
-    if (products.length == 0) {
+    if (carts.length == 0) {
       const fetchData = async () => {
         try {
-          const data = await productService.fetchAll();
-          setProducts(data);
+          const data = await cartService.fetchAll();
+          console.log("check", data)
+          setCarts(data);
         } catch (error) {
-          console.error("Failed to fetch products:", error);
+          console.error("Failed to fetch carts:", error);
         }
       };
-  
+
       fetchData();
     }
   }, []);
 
-  const handleDeleteProduct = async () => {
+  const handleDeleteCart = async () => {
     try {
-      if (selectedProduct) {
-        await productService.delete(selectedProduct.id);
+      if (selectedCart) {
+        await cartService.delete(selectedCart.id);
         onOpenChangeDelete(); // Đóng modal sau khi xóa thành công
         // Cập nhật lại danh sách sản phẩm nếu cần
-        setProducts((prevProducts) => 
-          prevProducts.filter(product => product.id !== selectedProduct.id)
+        setCarts((prevCarts) =>
+          prevCarts.filter((cart) => cart.id !== selectedCart.id)
         );
       }
     } catch (error) {
-      console.error("Failed to delete product:", error);
+      console.error("Failed to delete cart:", error);
     }
   };
 
   // const renderViewModal = () => (
-  //   <Modal isOpen={!!viewProduct} onOpenChange={() => setViewProduct(null)}>
+  //   <Modal isOpen={!!viewCart} onOpenChange={() => setViewCart(null)}>
   //     <ModalContent>
-  //       <ModalHeader>View Product</ModalHeader>
+  //       <ModalHeader>View Cart</ModalHeader>
   //       <ModalBody>
-  //         {viewProduct && (
+  //         {viewCart && (
   //           <>
-  //             <p>Title: {viewProduct.title}</p>
-  //             <p>Price: {viewProduct.price}</p>
-  //             <p>Category: {viewProduct.category}</p>
-  //             <p>Description: {viewProduct.description}</p>
-  //             <Image src={viewProduct.image} alt="Product Image" width={200} height={200} />
+  //             <p>Title: {viewCart.title}</p>
+  //             <p>Price: {viewCart.price}</p>
+  //             <p>Category: {viewCart.category}</p>
+  //             <p>Description: {viewCart.description}</p>
+  //             <Image src={viewCart.image} alt="Cart Image" width={200} height={200} />
   //           </>
   //         )}
   //       </ModalBody>
   //       <ModalFooter>
-  //         <Button onClick={() => setViewProduct(null)}>Close</Button>
+  //         <Button onClick={() => setViewCart(null)}>Close</Button>
   //       </ModalFooter>
   //     </ModalContent>
   //   </Modal>
   // );
 
   const filteredItems = React.useMemo(() => {
-    let filteredProducts = [...products];
+    let filteredCarts = [...carts];
 
     if (hasSearchFilter) {
-      filteredProducts = filteredProducts.filter((product) =>
-        product.title.toLowerCase().includes(filterValue.toLowerCase())
+      filteredCarts = filteredCarts.filter((cart) =>
+        cart.userId.toString().toLowerCase().includes(filterValue.toLowerCase())
       );
     }
 
-    return filteredProducts;
-  }, [products, filterValue, statusFilter]);
+    return filteredCarts;
+  }, [carts, filterValue, statusFilter]);
 
   const items = React.useMemo(() => {
     const start = (page - 1) * rowsPerPage;
@@ -166,115 +164,67 @@ export default function App() {
   }, [page, filteredItems, rowsPerPage]);
 
   const sortedItems = React.useMemo(() => {
-    return [...items].sort((a: Product, b: Product) => {
-      const first = a[sortDescriptor.column as keyof Product] as number;
-      const second = b[sortDescriptor.column as keyof Product] as number;
+    return [...items].sort((a: Cart, b: Cart) => {
+      const first = a[sortDescriptor.column as keyof Cart] as number;
+      const second = b[sortDescriptor.column as keyof Cart] as number;
       const cmp = first < second ? -1 : first > second ? 1 : 0;
 
       return sortDescriptor.direction === "descending" ? -cmp : cmp;
     });
   }, [sortDescriptor, items]);
-  const isValidUrl = (url: string) => {
-    return url.match(/(https?:\/\/.*\.(?:png|jpg|jpeg|gif))/i) !== null;
-  };
-  const renderCell = React.useCallback(
-    (product: Product, columnKey: React.Key) => {
-      const cellValue = product[columnKey as keyof Product];
-      const isLongText = typeof cellValue === "string" && cellValue.length > 20;
-      switch (columnKey) {
-        case "image":
-          return (
-            isValidUrl(cellValue.toString()) ? (
-              <Image
-                src={cellValue.toString()} // Chỉ gán nếu URL hợp lệ
-                alt="Product Image"
-                width={50}
-                height={50}
-                objectFit="cover" // Đảm bảo ảnh được cắt vừa khung
-                style={{ borderRadius: "5px" }} // Tùy chọn thêm cho góc bo tròn
-              />
-            ) : (
-              <div style={{ width: 50, height: 50, borderRadius: '5px', backgroundColor: '#f0f0f0' }}>
-                {/* Bạn có thể thêm hình ảnh mặc định ở đây */}
-                <span style={{ display: 'block', width: '100%', height: '100%', textAlign: 'center', lineHeight: '50px', color: '#999' }}>No Image</span>
-              </div>
-            )
-          );
-        case "title":
-          return (
-            <Tooltip
-              content={cellValue}
-              placement="top"
-              trigger={isLongText ? "focus" : undefined}
-            >
-              <div
-                style={{
-                  whiteSpace: "nowrap",
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
-                  maxWidth: "200px",
-                }}
-              >
-                {cellValue}
-              </div>
-            </Tooltip>
-          );
-        case "description":
-          return (
-            <Tooltip
-              content={cellValue}
-              placement="top"
-              trigger={isLongText ? "focus" : undefined}
-            >
-              <div
-                style={{
-                  whiteSpace: "nowrap",
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
-                  maxWidth: "200px",
-                }}
-              >
-                {cellValue}
-              </div>
-            </Tooltip>
-          );
-        case "actions":
-          return (
-            <div className="relative flex justify-end items-center gap-2">
-              <Dropdown className="bg-background border-1 border-default-200">
-                <DropdownTrigger>
-                  <Button isIconOnly radius="full" size="sm" variant="light">
-                    <VerticalDotsIcon className="text-default-400" />
-                  </Button>
-                </DropdownTrigger>
-                <DropdownMenu>
-                  <DropdownItem>View</DropdownItem>
-                  <DropdownItem
-                    onClick={() => {
-                      setSelectedProduct(product);
-                    }}
-                    onPress={onOpen}
-                  >
-                    Edit
-                  </DropdownItem>
-                  <DropdownItem
-                    onClick={() => {
-                      setSelectedProduct(product);
-                    }}
-                    onPress={onOpenDelete}
-                  >
-                    Delete
-                  </DropdownItem>
-                </DropdownMenu>
-              </Dropdown>
-            </div>
-          );
-        default:
-          return cellValue;
-      }
-    },
-    []
-  );
+  const renderCell = React.useCallback((cart: Cart, columnKey: React.Key) => {
+    if (!cart || typeof columnKey !== "string") {
+      return null; // Hoặc có thể render một thông báo lỗi
+    }
+
+    const cellValue = cart[columnKey as keyof Cart];
+    const isLongText = typeof cellValue === "string" && cellValue.length > 20;
+    switch (columnKey) {
+      // case "products":
+      //   return (
+      //     <ul>
+      //       {cart.products.map((product) => (
+      //         <li key={product.productId}>
+      //           Product ID: {product.productId}, Quantity: {product.quantity}
+      //         </li>
+      //       ))}
+      //     </ul>
+      //   );
+      case "actions":
+        return (
+          <div className="relative flex justify-end items-center gap-2">
+            <Dropdown className="bg-background border-1 border-default-200">
+              <DropdownTrigger>
+                <Button isIconOnly radius="full" size="sm" variant="light">
+                  <VerticalDotsIcon className="text-default-400" />
+                </Button>
+              </DropdownTrigger>
+              <DropdownMenu>
+                <DropdownItem>View</DropdownItem>
+                <DropdownItem
+                  onClick={() => {
+                    setSelectedCart(cart);
+                  }}
+                  onPress={onOpen}
+                >
+                  Edit
+                </DropdownItem>
+                <DropdownItem
+                  onClick={() => {
+                    setSelectedCart(cart);
+                  }}
+                  onPress={onOpenDelete}
+                >
+                  Delete
+                </DropdownItem>
+              </DropdownMenu>
+            </Dropdown>
+          </div>
+        );
+      default:
+        return cellValue;
+    }
+  }, []);
 
   const onRowsPerPageChange = React.useCallback(
     (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -363,21 +313,21 @@ export default function App() {
               </DropdownMenu>
             </Dropdown>
             <Button
-               className="bg-foreground text-background"
-               endContent={<PlusIcon />}
-               size="sm"
+              className="bg-foreground text-background"
+              endContent={<PlusIcon />}
+              size="sm"
               onClick={() => {
-                setSelectedProduct(null);
+                setSelectedCart(null);
               }}
               onPress={onOpen}
             >
-              Add New Product
+              Add New Cart
             </Button>
           </div>
         </div>
         <div className="flex justify-between items-center">
           <span className="text-default-400 text-small">
-            Total {products.length} products
+            Total {carts.length} carts
           </span>
           <label className="flex items-center text-default-400 text-small">
             Rows per page:
@@ -399,7 +349,7 @@ export default function App() {
     visibleColumns,
     onSearchChange,
     onRowsPerPageChange,
-    products.length,
+    carts.length,
     hasSearchFilter,
   ]);
 
@@ -446,17 +396,17 @@ export default function App() {
     []
   );
 
-  const handleAddOrUpdateProduct = (product: Product) => {
-    setProducts((prevProducts) => {
-      const index = prevProducts.findIndex((p) => p.id === product.id);
+  const handleAddOrUpdateCart = (cart: Cart) => {
+    setCarts((prevCarts) => {
+      const index = prevCarts.findIndex((p) => p.id === cart.id);
       if (index !== -1) {
         // Nếu sản phẩm đã tồn tại, cập nhật
-        const updatedProducts = [...prevProducts];
-        updatedProducts[index] = product; // Cập nhật sản phẩm
-        return updatedProducts;
+        const updatedCarts = [...prevCarts];
+        updatedCarts[index] = cart; // Cập nhật sản phẩm
+        return updatedCarts;
       } else {
         // Nếu là sản phẩm mới, thêm vào danh sách
-        return [...prevProducts, product];
+        return [...prevCarts, cart];
       }
     });
   };
@@ -495,7 +445,7 @@ export default function App() {
             </TableColumn>
           )}
         </TableHeader>
-        <TableBody emptyContent={"No products found"} items={sortedItems}>
+        <TableBody emptyContent={"No carts found"} items={sortedItems}>
           {(item) => (
             <TableRow key={item.id}>
               {(columnKey) => (
@@ -505,12 +455,12 @@ export default function App() {
           )}
         </TableBody>
       </Table>
-      
-      <AddOrUpdateProduct
-        data={selectedProduct} // Truyền dữ liệu sản phẩm
+
+      <AddOrUpdateCart
+        data={selectedCart} // Truyền dữ liệu sản phẩm
         isOpen={isOpen}
         onOpenChange={onOpenChange}
-        onProductSave={handleAddOrUpdateProduct}
+        onCartSave={handleAddOrUpdateCart}
       />
 
       <Modal
@@ -525,7 +475,7 @@ export default function App() {
             <Button color="danger" variant="flat" onClick={onOpenChangeDelete}>
               Hủy
             </Button>
-            <Button color="primary" onClick={handleDeleteProduct}>
+            <Button color="primary" onClick={handleDeleteCart}>
               Xóa
             </Button>
           </ModalFooter>

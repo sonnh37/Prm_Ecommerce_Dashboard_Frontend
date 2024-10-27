@@ -11,6 +11,7 @@ class BaseService<T> {
     return axios
       .get<T[]>(`${this.endpoint}`)
       .then((response) => {
+        console.log("check_all", response.data)
         return response.data;
       })
       .catch((error) => {

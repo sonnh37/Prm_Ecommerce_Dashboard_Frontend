@@ -27,7 +27,7 @@ export const AddOrUpdateProduct: React.FC<AddOrUpdateProductProps> = ({
   const [product, setProduct] = useState<Product>({
     id: 0,
     title: "",
-    price: "",
+    price: 0,
     category: "",
     description: "",
     image: "",
@@ -40,7 +40,7 @@ export const AddOrUpdateProduct: React.FC<AddOrUpdateProductProps> = ({
       setProduct({
         id: 0,
         title: "",
-        price: "",
+        price: 0,
         category: "",
         description: "",
         image: "",
@@ -85,7 +85,8 @@ export const AddOrUpdateProduct: React.FC<AddOrUpdateProductProps> = ({
           <Input
             label="Price"
             name="price"
-            value={product.price}
+            type="number"
+            value={product.price.toString()}
             onChange={handleChange}
             variant="bordered"
           />

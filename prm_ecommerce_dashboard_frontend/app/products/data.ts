@@ -1,5 +1,3 @@
-import productService from "@/services/product-service";
-
 const columns = [
   { name: "ID", uid: "id", sortable: true },
   { name: "IMAGE", uid: "image"},
