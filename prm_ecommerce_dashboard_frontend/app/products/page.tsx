@@ -8,7 +8,7 @@ import {
 } from "@/components/icons";
 import { capitalize } from "@/libs/utils";
 import productService from "@/services/product-service";
-import { Product } from "@/types/product";
+import { Brand, Image_, Product } from "@/types/product";
 import {
   Button,
   ChipProps,
@@ -46,14 +46,18 @@ const statusColorMap: Record<string, ChipProps["color"]> = {
 };
 
 const INITIAL_VISIBLE_COLUMNS = [
-  "image",
-  "title",
+  "images",
+  "name",
   "price",
+  "brand",
   "category",
   "description",
+  "quantitySold",
+  "origin",
+  "status",
+  "isDelete",
   "actions",
 ];
-
 export default function App() {
   const [products, setProducts] = useState<Product[]>([]); // Khởi tạo state cho products
 
@@ -104,7 +108,7 @@ export default function App() {
           console.error("Failed to fetch products:", error);
         }
       };
-  
+
       fetchData();
     }
   }, []);
@@ -112,11 +116,11 @@ export default function App() {
   const handleDeleteProduct = async () => {
     try {
       if (selectedProduct) {
-        await productService.delete(selectedProduct.id);
+        await productService.delete(selectedProduct._id);
         onOpenChangeDelete(); // Đóng modal sau khi xóa thành công
         // Cập nhật lại danh sách sản phẩm nếu cần
-        setProducts((prevProducts) => 
-          prevProducts.filter(product => product.id !== selectedProduct.id)
+        setProducts((prevProducts) =>
+          prevProducts.filter((product) => product._id !== selectedProduct._id)
         );
       }
     } catch (error) {
@@ -151,7 +155,7 @@ export default function App() {
 
     if (hasSearchFilter) {
       filteredProducts = filteredProducts.filter((product) =>
-        product.title.toLowerCase().includes(filterValue.toLowerCase())
+        product.name.toLowerCase().includes(filterValue.toLowerCase())
       );
     }
 
@@ -182,28 +186,87 @@ export default function App() {
       const cellValue = product[columnKey as keyof Product];
       const isLongText = typeof cellValue === "string" && cellValue.length > 20;
       switch (columnKey) {
-        case "image":
+        case "isDelete":
           return (
-            isValidUrl(cellValue.toString()) ? (
-              <Image
-                src={cellValue.toString()} // Chỉ gán nếu URL hợp lệ
-                alt="Product Image"
-                width={50}
-                height={50}
-                objectFit="cover" // Đảm bảo ảnh được cắt vừa khung
-                style={{ borderRadius: "5px" }} // Tùy chọn thêm cho góc bo tròn
-              />
-            ) : (
-              <div style={{ width: 50, height: 50, borderRadius: '5px', backgroundColor: '#f0f0f0' }}>
-                {/* Bạn có thể thêm hình ảnh mặc định ở đây */}
-                <span style={{ display: 'block', width: '100%', height: '100%', textAlign: 'center', lineHeight: '50px', color: '#999' }}>No Image</span>
-              </div>
-            )
+            <div>
+              {!cellValue ? (
+                <span className="text-green-500">Active</span>
+              ) : (
+                <span className="text-red-500">Deleted</span>
+              )}
+            </div>
           );
-        case "title":
+        case "images":
+          const images_ = cellValue as Image_[];
+          return images_ && images_.length > 0 ? (
+            <div className="flex space-x-2">
+              {" "}
+              {/* Sử dụng Flexbox để căn chỉnh các hình ảnh */}
+              {images_.map((imageObj, index) =>
+                isValidUrl(imageObj.imageUrl) ? ( // Kiểm tra URL hợp lệ
+                  <Image
+                    key={index}
+                    src={imageObj.imageUrl} // Sử dụng imageUrl từ đối tượng
+                    alt={`Product Image ${index + 1}`}
+                    width={50}
+                    height={50}
+                    objectFit="cover" // Đảm bảo ảnh được cắt vừa khung
+                    style={{ borderRadius: "5px" }} // Tùy chọn thêm cho góc bo tròn
+                  />
+                ) : (
+                  <div
+                    key={index}
+                    style={{
+                      width: 50,
+                      height: 50,
+                      borderRadius: "5px",
+                      backgroundColor: "#f0f0f0",
+                    }}
+                  >
+                    <span
+                      style={{
+                        display: "block",
+                        width: "100%",
+                        height: "100%",
+                        textAlign: "center",
+                        lineHeight: "50px",
+                        color: "#999",
+                      }}
+                    >
+                      No Image
+                    </span>
+                  </div>
+                )
+              )}
+            </div>
+          ) : (
+            <div
+              style={{
+                width: 50,
+                height: 50,
+                borderRadius: "5px",
+                backgroundColor: "#f0f0f0",
+              }}
+            >
+              <span
+                style={{
+                  display: "block",
+                  width: "100%",
+                  height: "100%",
+                  textAlign: "center",
+                  lineHeight: "50px",
+                  color: "#999",
+                }}
+              >
+                No Image
+              </span>
+            </div>
+          );
+
+        case "name":
           return (
             <Tooltip
-              content={cellValue}
+              content={cellValue.toString()}
               placement="top"
               trigger={isLongText ? "focus" : undefined}
             >
@@ -215,14 +278,16 @@ export default function App() {
                   maxWidth: "200px",
                 }}
               >
-                {cellValue}
+                {cellValue.toString()}
               </div>
             </Tooltip>
           );
-        case "description":
+
+        case "brand":
+          const brand_ = cellValue as Brand;
           return (
             <Tooltip
-              content={cellValue}
+              content={brand_ ? brand_.name : "Unknown"}
               placement="top"
               trigger={isLongText ? "focus" : undefined}
             >
@@ -234,7 +299,35 @@ export default function App() {
                   maxWidth: "200px",
                 }}
               >
-                {cellValue}
+                {brand_ ? (
+                  <div>
+                    {brand_.name}
+                    <p className="text-xs text-gray-500">{brand_._id}</p>
+                    <br /> {/* Xuống dòng */}
+                  </div>
+                ) : (
+                  "Unknown"
+                )}
+              </div>
+            </Tooltip>
+          );
+
+        case "description":
+          return (
+            <Tooltip
+              content={cellValue.toString()}
+              placement="top"
+              trigger={isLongText ? "focus" : undefined}
+            >
+              <div
+                style={{
+                  whiteSpace: "nowrap",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  maxWidth: "200px",
+                }}
+              >
+                {cellValue.toString()}
               </div>
             </Tooltip>
           );
@@ -248,7 +341,6 @@ export default function App() {
                   </Button>
                 </DropdownTrigger>
                 <DropdownMenu>
-                  <DropdownItem>View</DropdownItem>
                   <DropdownItem
                     onClick={() => {
                       setSelectedProduct(product);
@@ -363,9 +455,9 @@ export default function App() {
               </DropdownMenu>
             </Dropdown>
             <Button
-               className="bg-foreground text-background"
-               endContent={<PlusIcon />}
-               size="sm"
+              className="bg-foreground text-background"
+              endContent={<PlusIcon />}
+              size="sm"
               onClick={() => {
                 setSelectedProduct(null);
               }}
@@ -448,7 +540,7 @@ export default function App() {
 
   const handleAddOrUpdateProduct = (product: Product) => {
     setProducts((prevProducts) => {
-      const index = prevProducts.findIndex((p) => p.id === product.id);
+      const index = prevProducts.findIndex((p) => p._id === product._id);
       if (index !== -1) {
         // Nếu sản phẩm đã tồn tại, cập nhật
         const updatedProducts = [...prevProducts];
@@ -497,7 +589,7 @@ export default function App() {
         </TableHeader>
         <TableBody emptyContent={"No products found"} items={sortedItems}>
           {(item) => (
-            <TableRow key={item.id}>
+            <TableRow key={item._id}>
               {(columnKey) => (
                 <TableCell>{renderCell(item, columnKey)}</TableCell>
               )}
@@ -505,7 +597,7 @@ export default function App() {
           )}
         </TableBody>
       </Table>
-      
+
       <AddOrUpdateProduct
         data={selectedProduct} // Truyền dữ liệu sản phẩm
         isOpen={isOpen}

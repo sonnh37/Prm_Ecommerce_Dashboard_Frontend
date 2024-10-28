@@ -1,10 +1,15 @@
 const columns = [
-  { name: "ID", uid: "id", sortable: true },
-  { name: "IMAGE", uid: "image"},
-  { name: "TITLE", uid: "title", sortable: true },
+  { name: "ID", uid: "_id", sortable: true },
+   { name: "IMAGES", uid: "images" }, // Hiển thị hình ảnh nếu cần
+  { name: "NAME", uid: "name", sortable: true },
   { name: "PRICE", uid: "price", sortable: true },
+  { name: "BRAND", uid: "brand" }, // Điều chỉnh để lấy tên của thương hiệu
   { name: "CATEGORY", uid: "category", sortable: true },
   { name: "DESCRIPTION", uid: "description" },
+  { name: "QUANTITY SOLD", uid: "quantitySold" },
+  { name: "ORIGIN", uid: "origin" },
+  { name: "STATUS", uid: "status" },
+  { name: "IS DELETE", uid: "isDelete" },
   { name: "ACTIONS", uid: "actions" },
 ];
 

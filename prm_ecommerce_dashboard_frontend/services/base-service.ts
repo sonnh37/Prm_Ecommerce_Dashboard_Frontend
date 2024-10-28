@@ -19,7 +19,7 @@ class BaseService<T> {
       });
   };
 
-  public fetchById = (id: number): Promise<T> => {
+  public fetchById = (id: string): Promise<T> => {
     return axios
       .get<T>(`${this.endpoint}/${id}`)
       .then((response) => {
@@ -37,14 +37,14 @@ class BaseService<T> {
       .catch((error) => this.handleError(error)); // Xử lý lỗi
   };
 
-  public update = (id: number, command: any): Promise<T> => {
+  public update = (id: string, command: any): Promise<T> => {
     return axios
       .put<T>(`${this.endpoint}/${id}`, command)
       .then((response) => response.data)
       .catch((error) => this.handleError(error)); // Xử lý lỗi
   };
 
-  public delete = (id: number): Promise<void> => {
+  public delete = (id: string): Promise<void> => {
     return axios
       .delete<void>(`${this.endpoint}/${id}`)
       .then(() => {})
