@@ -116,7 +116,7 @@ export default function App() {
   const handleDeleteProduct = async () => {
     try {
       if (selectedProduct) {
-        await productService.delete(selectedProduct._id);
+        await productService.delete(selectedProduct._id!);
         onOpenChangeDelete(); // Đóng modal sau khi xóa thành công
         // Cập nhật lại danh sách sản phẩm nếu cần
         setProducts((prevProducts) =>
@@ -155,7 +155,7 @@ export default function App() {
 
     if (hasSearchFilter) {
       filteredProducts = filteredProducts.filter((product) =>
-        product.name.toLowerCase().includes(filterValue.toLowerCase())
+        product.name!.toLowerCase().includes(filterValue.toLowerCase())
       );
     }
 
@@ -181,9 +181,12 @@ export default function App() {
   const isValidUrl = (url: string) => {
     return url.match(/(https?:\/\/.*\.(?:png|jpg|jpeg|gif))/i) !== null;
   };
+
+  const [galleryImages, setGalleryImages] = useState<Image_[]>([]); // Lưu danh sách ảnh cho modal gallery
+
   const renderCell = React.useCallback(
     (product: Product, columnKey: React.Key) => {
-      const cellValue = product[columnKey as keyof Product];
+      const cellValue = product[columnKey as keyof Product]!;
       const isLongText = typeof cellValue === "string" && cellValue.length > 20;
       switch (columnKey) {
         case "isDelete":
@@ -198,20 +201,19 @@ export default function App() {
           );
         case "images":
           const images_ = cellValue as Image_[];
+          const MAX_VISIBLE_IMAGES = 1; // Hiển thị tối đa 3 ảnh
           return images_ && images_.length > 0 ? (
             <div className="flex space-x-2">
-              {" "}
-              {/* Sử dụng Flexbox để căn chỉnh các hình ảnh */}
-              {images_.map((imageObj, index) =>
-                isValidUrl(imageObj.imageUrl) ? ( // Kiểm tra URL hợp lệ
+              {images_.slice(0, MAX_VISIBLE_IMAGES).map((imageObj, index) =>
+                isValidUrl(imageObj.imageUrl) ? (
                   <Image
                     key={index}
-                    src={imageObj.imageUrl} // Sử dụng imageUrl từ đối tượng
+                    src={imageObj.imageUrl}
                     alt={`Product Image ${index + 1}`}
                     width={50}
                     height={50}
-                    objectFit="cover" // Đảm bảo ảnh được cắt vừa khung
-                    style={{ borderRadius: "5px" }} // Tùy chọn thêm cho góc bo tròn
+                    objectFit="cover"
+                    style={{ borderRadius: "5px", cursor: "pointer" }}
                   />
                 ) : (
                   <div
@@ -237,6 +239,11 @@ export default function App() {
                     </span>
                   </div>
                 )
+              )}
+              {images_.length > MAX_VISIBLE_IMAGES && (
+                <span style={{ cursor: "pointer", color: "blue" }}>
+                  +{images_.length - MAX_VISIBLE_IMAGES} more
+                </span>
               )}
             </div>
           ) : (
@@ -303,6 +310,35 @@ export default function App() {
                   <div>
                     {brand_.name}
                     <p className="text-xs text-gray-500">{brand_._id}</p>
+                    <br /> {/* Xuống dòng */}
+                  </div>
+                ) : (
+                  "Unknown"
+                )}
+              </div>
+            </Tooltip>
+          );
+
+        case "category":
+          const category_ = cellValue as Brand;
+          return (
+            <Tooltip
+              content={category_ ? category_.name : "Unknown"}
+              placement="top"
+              trigger={isLongText ? "focus" : undefined}
+            >
+              <div
+                style={{
+                  whiteSpace: "nowrap",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  maxWidth: "200px",
+                }}
+              >
+                {category_ ? (
+                  <div>
+                    {category_.name}
+                    <p className="text-xs text-gray-500">{category_._id}</p>
                     <br /> {/* Xuống dòng */}
                   </div>
                 ) : (
@@ -538,20 +574,20 @@ export default function App() {
     []
   );
 
-  const handleAddOrUpdateProduct = (product: Product) => {
-    setProducts((prevProducts) => {
-      const index = prevProducts.findIndex((p) => p._id === product._id);
-      if (index !== -1) {
-        // Nếu sản phẩm đã tồn tại, cập nhật
-        const updatedProducts = [...prevProducts];
-        updatedProducts[index] = product; // Cập nhật sản phẩm
-        return updatedProducts;
-      } else {
-        // Nếu là sản phẩm mới, thêm vào danh sách
-        return [...prevProducts, product];
-      }
-    });
-  };
+  // const handleAddOrUpdateProduct = (product: Product) => {
+  //   setProducts((prevProducts) => {
+  //     const index = prevProducts.findIndex((p) => p._id === product._id);
+  //     if (index !== -1) {
+  //       // Nếu sản phẩm đã tồn tại, cập nhật
+  //       const updatedProducts = [...prevProducts];
+  //       updatedProducts[index] = product;
+  //       return updatedProducts;
+  //     } else {
+  //       // Nếu là sản phẩm mới, thêm vào danh sách
+  //       return [...prevProducts, product];
+  //     }
+  //   });
+  // };
 
   return (
     <>
@@ -602,7 +638,7 @@ export default function App() {
         data={selectedProduct} // Truyền dữ liệu sản phẩm
         isOpen={isOpen}
         onOpenChange={onOpenChange}
-        onProductSave={handleAddOrUpdateProduct}
+        // onProductSave={handleAddOrUpdateProduct}
       />
 
       <Modal

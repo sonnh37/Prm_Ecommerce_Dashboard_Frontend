@@ -12,37 +12,39 @@ import {
 } from "@nextui-org/react";
 import React, { useEffect, useState } from "react";
 import productService from "@/services/product-service";
-import { Brand, Image_, Product } from "@/types/product";
+import { Brand, Category, Image_, Product } from "@/types/product";
 import brandService from "@/services/brand-service";
 import imageService from "@/services/image-service";
+import categoryService from "@/services/category-service";
 
 interface AddOrUpdateProductProps {
   data?: Product | null;
   isOpen: boolean;
   onOpenChange: () => void;
-  onProductSave: (product: Product) => void;
+  // onProductSave: (product: Product) => void;
 }
 
 export const AddOrUpdateProduct: React.FC<AddOrUpdateProductProps> = ({
   data = null,
   isOpen,
   onOpenChange,
-  onProductSave,
+  // onProductSave,
 }) => {
   const [product, setProduct] = useState<Product>({
-    _id: "",
+    _id: undefined,
     name: "",
     price: 0,
-    brand: { _id: "", name: "" },
-    category: "",
+    brand: undefined, // Set default values for brand and category
+    category: undefined,
     description: "",
     quantitySold: 0,
     origin: "",
     status: "",
     isDelete: false,
-    images: [], // Trường images
+    images: [],
   });
   const [brands, setBrands] = useState<Brand[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [availableImages, setAvailableImages] = useState<Image_[]>([]); // Danh sách hình ảnh có sẵn
 
   useEffect(() => {
@@ -55,11 +57,19 @@ export const AddOrUpdateProduct: React.FC<AddOrUpdateProductProps> = ({
       }
     };
 
+    const fetchCategories = async () => {
+      try {
+        const fetchedCategories = await categoryService.fetchAll();
+        setCategories(fetchedCategories);
+      } catch (error) {
+        console.error("Failed to fetch categories:", error);
+      }
+    };
+
     const fetchAvailableImages = async () => {
       try {
-        // Giả sử bạn có dịch vụ để lấy danh sách hình ảnh
-        const images = await imageService.fetchAll(); // Lấy danh sách hình ảnh có sẵn
-        setAvailableImages(images); // Giả sử images là mảng đường dẫn hình ảnh
+        const images = await imageService.fetchAll();
+        setAvailableImages(images);
       } catch (error) {
         console.error("Failed to fetch available images:", error);
       }
@@ -67,30 +77,63 @@ export const AddOrUpdateProduct: React.FC<AddOrUpdateProductProps> = ({
 
     fetchBrands();
     fetchAvailableImages();
+    fetchCategories();
+
+    console.log("check_data", data);
 
     if (data) {
-      setProduct(data);
+      setProduct({
+        ...data,
+        brand: data.brand || { _id: undefined, name: "" },
+        category: data.category || {
+          _id: undefined,
+          name: "",
+          isDelete: false,
+        },
+      });
     } else {
       setProduct({
-        _id: "",
+        _id: undefined,
         name: "",
         price: 0,
-        brand: { _id: "", name: "" },
-        category: "",
+        brand: { _id: undefined, name: "" },
+        category: { _id: undefined, name: "", isDelete: false },
         description: "",
         quantitySold: 0,
         origin: "",
         status: "",
         isDelete: false,
-        images: [], // Reset images khi không có dữ liệu
+        images: [],
       });
     }
   }, [data]);
 
-  const handleBrandChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
-    const selectedBrandId = event.target.value;
+  useEffect(() => {
+    console.log("check_product", product);
+  }, [product]);
+
+  const handleBrandChange = (e: any) => {
+    const selectedBrandId = e.target.value;
     const selectedBrand = brands.find((brand) => brand._id === selectedBrandId);
-    setProduct({ ...product, brand: selectedBrand || { _id: "", name: "" } });
+    setProduct((prevProduct) => ({
+      ...prevProduct,
+      brand: selectedBrand || { _id: undefined, name: "" },
+    }));
+  };
+
+  const handleCategoryChange = (e: any) => {
+    const selectedCategoryId = e.target.value;
+    const selectedCategory = categories.find(
+      (category) => category._id === selectedCategoryId
+    );
+    setProduct((prevProduct) => ({
+      ...prevProduct,
+      category: selectedCategory || {
+        _id: undefined,
+        name: "",
+        isDelete: false,
+      },
+    }));
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -98,16 +141,25 @@ export const AddOrUpdateProduct: React.FC<AddOrUpdateProductProps> = ({
     setProduct({ ...product, [name]: value });
   };
 
+  const handleRemoveImage = (imageToRemove: Image_) => {
+    setProduct({
+      ...product,
+      images: product.images.filter((image) => image._id !== imageToRemove._id),
+    });
+  };
+
   const handleAddOrUpdateProduct = async () => {
     try {
       let savedProduct;
-      if (data) {
-        console.log("check_input", product)
-        //savedProduct = await productService.update(product._id, product); // Cập nhật sản phẩm
+      console.log("check_input", product);
+      product.status = "Available";
+      if (data?._id) {
+        savedProduct = await productService.update(product._id!, product); // Cập nhật sản phẩm
       } else {
         savedProduct = await productService.create(product); // Thêm sản phẩm mới
       }
       //onProductSave(savedProduct);
+      window.location.reload();
       onOpenChange(); // Đóng modal
     } catch (error) {
       console.error("Failed to add or update product:", error);
@@ -115,12 +167,22 @@ export const AddOrUpdateProduct: React.FC<AddOrUpdateProductProps> = ({
   };
 
   const handleAddImage = (newImage: Image_) => {
-    const isImageExist = product.images.some(image => image._id === newImage._id);
-  
+    const isImageExist = product.images.some(
+      (image) => image._id === newImage._id
+    );
+
     if (!isImageExist) {
       setProduct({ ...product, images: [...product.images, newImage] });
     }
   };
+
+  useEffect(() => {
+    console.log("Product brand ID:", product.brand?._id);
+    console.log(
+      "Brand options:",
+      brands.map((brand) => brand._id)
+    );
+  }, [product, brands]);
 
   return (
     <Modal isOpen={isOpen} onOpenChange={onOpenChange} placement="top-center">
@@ -143,24 +205,33 @@ export const AddOrUpdateProduct: React.FC<AddOrUpdateProductProps> = ({
             variant="bordered"
           />
           <Select
-            label="Brand"
+          disallowEmptySelection
+          items={brands}
+          defaultSelectedKeys={[product.brand?.name!]} // Sử dụng name làm giá trị mặc định
+          label="Brand"
             placeholder="Select a brand"
             onChange={handleBrandChange}
-            value={product.brand._id}
+            value={product.brand?._id}
           >
             {brands.map((brand) => (
-              <SelectItem key={brand._id} value={brand._id}>
+              <SelectItem key={brand._id!} value={brand._id}>
                 {brand.name}
               </SelectItem>
             ))}
           </Select>
-          <Input
+          <Select
             label="Category"
-            name="category"
-            value={product.category}
-            onChange={handleChange}
-            variant="bordered"
-          />
+            placeholder="Select a category"
+            onChange={handleCategoryChange}
+            defaultSelectedKeys={[product.category?.name!]} // Thiết lập mặc định khi render lần đầu
+            value={product.category?._id || undefined} // Đảm bảo cập nhật khi product thay đổi
+          >
+            {categories.map((category) => (
+              <SelectItem key={category._id!} value={category._id}>
+                {category.name}
+              </SelectItem>
+            ))}
+          </Select>
           <Input
             label="Description"
             name="description"
@@ -179,15 +250,16 @@ export const AddOrUpdateProduct: React.FC<AddOrUpdateProductProps> = ({
           {/* Hiển thị hình ảnh */}
           <div className="flex flex-wrap gap-2 mt-4">
             {product.images.map((image) => (
-              <Image
-                key={image._id}
-                src={image.imageUrl}
-                alt={product.name}
-                width={100}
-                height={100}
-                
-                style={{ borderRadius: "5px" }}
-              />
+              <div className="relative inline-block" key={image._id}>
+                <Image
+                  src={image.imageUrl}
+                  alt={product.name}
+                  width={100}
+                  height={100}
+                  className="cursor-pointer rounded"
+                  onClick={() => handleRemoveImage(image)}
+                />
+              </div>
             ))}
           </div>
 
@@ -197,14 +269,14 @@ export const AddOrUpdateProduct: React.FC<AddOrUpdateProductProps> = ({
             <div className="flex flex-wrap gap-2">
               {availableImages.map((imageUrl) => (
                 <Image
-                key={imageUrl._id}
-                src={imageUrl.imageUrl}
-                alt={`Available image`}
-                width={50}
-                height={50}
-                style={{ borderRadius: "5px", cursor: "pointer" }}
-                onClick={() => handleAddImage(imageUrl)} // Truyền đối tượng Image khi nhấn
-              />
+                  key={imageUrl._id}
+                  src={imageUrl.imageUrl}
+                  alt={`Available image`}
+                  width={50}
+                  height={50}
+                  style={{ borderRadius: "5px", cursor: "pointer" }}
+                  onClick={() => handleAddImage(imageUrl)} // Truyền đối tượng Image khi nhấn
+                />
               ))}
             </div>
           </div>

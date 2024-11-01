@@ -4,7 +4,7 @@ const columns = [
   { name: "NAME", uid: "name", sortable: true },
   { name: "PRICE", uid: "price", sortable: true },
   { name: "BRAND", uid: "brand" }, // Điều chỉnh để lấy tên của thương hiệu
-  { name: "CATEGORY", uid: "category", sortable: true },
+  { name: "CATEGORY", uid: "category"},
   { name: "DESCRIPTION", uid: "description" },
   { name: "QUANTITY SOLD", uid: "quantitySold" },
   { name: "ORIGIN", uid: "origin" },
