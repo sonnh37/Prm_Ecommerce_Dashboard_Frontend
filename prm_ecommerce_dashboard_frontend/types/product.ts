@@ -20,12 +20,12 @@ export interface Product {
   _id?: string;
   name?: string;
   price: number;
-  brand?: Brand; // Thay đổi `brand` thành đối tượng `Brand`
+  brand?: Brand;
   category?: Category;
   description?: string;
   quantitySold: number;
   origin?: string;
   status?: string;
   isDelete?: boolean;
-  images: Image_[]; // Thêm `images` là mảng các đối tượng `Image`
+  images: Image_[];
 }

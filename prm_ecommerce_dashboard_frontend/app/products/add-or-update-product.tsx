@@ -176,14 +176,6 @@ export const AddOrUpdateProduct: React.FC<AddOrUpdateProductProps> = ({
     }
   };
 
-  useEffect(() => {
-    console.log("Product brand ID:", product.brand?._id);
-    console.log(
-      "Brand options:",
-      brands.map((brand) => brand._id)
-    );
-  }, [product, brands]);
-
   return (
     <Modal isOpen={isOpen} onOpenChange={onOpenChange} placement="top-center">
       <ModalContent>
@@ -205,10 +197,10 @@ export const AddOrUpdateProduct: React.FC<AddOrUpdateProductProps> = ({
             variant="bordered"
           />
           <Select
-          disallowEmptySelection
-          items={brands}
-          defaultSelectedKeys={[product.brand?.name!]} // Sử dụng name làm giá trị mặc định
-          label="Brand"
+            disallowEmptySelection
+            items={brands}
+            defaultSelectedKeys={[product.brand?.name!]} // Sử dụng name làm giá trị mặc định
+            label="Brand"
             placeholder="Select a brand"
             onChange={handleBrandChange}
             value={product.brand?._id}
