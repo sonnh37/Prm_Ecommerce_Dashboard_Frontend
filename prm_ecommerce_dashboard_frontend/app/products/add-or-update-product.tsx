@@ -79,25 +79,17 @@ export const AddOrUpdateProduct: React.FC<AddOrUpdateProductProps> = ({
     fetchAvailableImages();
     fetchCategories();
 
-    console.log("check_data", data);
-
     if (data) {
       setProduct({
         ...data,
-        brand: data.brand || { _id: undefined, name: "" },
-        category: data.category || {
-          _id: undefined,
-          name: "",
-          isDelete: false,
-        },
       });
     } else {
       setProduct({
         _id: undefined,
         name: "",
         price: 0,
-        brand: { _id: undefined, name: "" },
-        category: { _id: undefined, name: "", isDelete: false },
+        brand: undefined,
+        category: undefined,
         description: "",
         quantitySold: 0,
         origin: "",
@@ -197,9 +189,10 @@ export const AddOrUpdateProduct: React.FC<AddOrUpdateProductProps> = ({
             variant="bordered"
           />
           <Select
-            disallowEmptySelection
-            items={brands}
-            defaultSelectedKeys={[product.brand?.name!]} // Sử dụng name làm giá trị mặc định
+            defaultSelectedKeys={[]} // Sử dụng name làm giá trị mặc định
+            selectedKeys={
+              product.brand ? new Set([product.brand?._id!]) : new Set()
+            }
             label="Brand"
             placeholder="Select a brand"
             onChange={handleBrandChange}
@@ -215,8 +208,10 @@ export const AddOrUpdateProduct: React.FC<AddOrUpdateProductProps> = ({
             label="Category"
             placeholder="Select a category"
             onChange={handleCategoryChange}
-            defaultSelectedKeys={[product.category?.name!]} // Thiết lập mặc định khi render lần đầu
-            value={product.category?._id || undefined} // Đảm bảo cập nhật khi product thay đổi
+            selectedKeys={
+              product.category ? new Set([product.category?._id!]) : new Set()
+            }
+            value={product.category?._id || undefined}
           >
             {categories.map((category) => (
               <SelectItem key={category._id!} value={category._id}>

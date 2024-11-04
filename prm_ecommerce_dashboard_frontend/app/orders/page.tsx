@@ -46,15 +46,12 @@ const statusColorMap: Record<string, ChipProps["color"]> = {
 };
 
 const INITIAL_VISIBLE_COLUMNS = [
-  // "products",
   "user",
-  "cart",
   "voucher",
   "priceBeforeShip",
   "totalPrice",
   "date",
   "status",
-  "isDeleted",
   "actions",
 ];
 export default function App() {
@@ -96,7 +93,6 @@ export default function App() {
     );
   }, [visibleColumns]);
 
-  // useEffect để fetch dữ liệu khi component mount
   useEffect(() => {
     if (orders.length == 0) {
       const fetchData = async () => {
@@ -155,155 +151,11 @@ export default function App() {
       return sortDescriptor.direction === "descending" ? -cmp : cmp;
     });
   }, [sortDescriptor, items]);
-  const isValidUrl = (url: string) => {
-    return url.match(/(https?:\/\/.*\.(?:png|jpg|jpeg|gif))/i) !== null;
-  };
-
-  const [galleryImages, setGalleryImages] = useState<Image_[]>([]); // Lưu danh sách ảnh cho modal gallery
 
   const renderCell = React.useCallback((order: Order, columnKey: React.Key) => {
     const cellValue = order[columnKey as keyof Order]!;
     const isLongText = typeof cellValue === "string" && cellValue.length > 20;
     switch (columnKey) {
-      case "isDelete":
-        return (
-          <div>
-            {!cellValue ? (
-              <span className="text-green-500">Active</span>
-            ) : (
-              <span className="text-red-500">Deleted</span>
-            )}
-          </div>
-        );
-      // case "images":
-      //   const images_ = cellValue as Image_[];
-      //   const MAX_VISIBLE_IMAGES = 1; // Hiển thị tối đa 3 ảnh
-      //   return images_ && images_.length > 0 ? (
-      //     <div className="flex space-x-2">
-      //       {images_.slice(0, MAX_VISIBLE_IMAGES).map((imageObj, index) =>
-      //         isValidUrl(imageObj.imageUrl) ? (
-      //           <Image
-      //             key={index}
-      //             src={imageObj.imageUrl}
-      //             alt={`Order Image ${index + 1}`}
-      //             width={50}
-      //             height={50}
-      //             objectFit="cover"
-      //             style={{ borderRadius: "5px", cursor: "pointer" }}
-      //           />
-      //         ) : (
-      //           <div
-      //             key={index}
-      //             style={{
-      //               width: 50,
-      //               height: 50,
-      //               borderRadius: "5px",
-      //               backgroundColor: "#f0f0f0",
-      //             }}
-      //           >
-      //             <span
-      //               style={{
-      //                 display: "block",
-      //                 width: "100%",
-      //                 height: "100%",
-      //                 textAlign: "center",
-      //                 lineHeight: "50px",
-      //                 color: "#999",
-      //               }}
-      //             >
-      //               No Image
-      //             </span>
-      //           </div>
-      //         )
-      //       )}
-      //       {images_.length > MAX_VISIBLE_IMAGES && (
-      //         <span style={{ cursor: "pointer", color: "blue" }}>
-      //           +{images_.length - MAX_VISIBLE_IMAGES} more
-      //         </span>
-      //       )}
-      //     </div>
-      //   ) : (
-      //     <div
-      //       style={{
-      //         width: 50,
-      //         height: 50,
-      //         borderRadius: "5px",
-      //         backgroundColor: "#f0f0f0",
-      //       }}
-      //     >
-      //       <span
-      //         style={{
-      //           display: "block",
-      //           width: "100%",
-      //           height: "100%",
-      //           textAlign: "center",
-      //           lineHeight: "50px",
-      //           color: "#999",
-      //         }}
-      //       >
-      //         No Image
-      //       </span>
-      //     </div>
-      //   );
-
-      // case "brand":
-      //   const brand_ = cellValue as Brand;
-      //   return (
-      //     <Tooltip
-      //       content={brand_ ? brand_.name : "Unknown"}
-      //       placement="top"
-      //       trigger={isLongText ? "focus" : undefined}
-      //     >
-      //       <div
-      //         style={{
-      //           whiteSpace: "nowrap",
-      //           overflow: "hidden",
-      //           textOverflow: "ellipsis",
-      //           maxWidth: "200px",
-      //         }}
-      //       >
-      //         {brand_ ? (
-      //           <div>
-      //             {brand_.name}
-      //             <p className="text-xs text-gray-500">{brand_._id}</p>
-      //             <br /> {/* Xuống dòng */}
-      //           </div>
-      //         ) : (
-      //           "Unknown"
-      //         )}
-      //       </div>
-      //     </Tooltip>
-      //   );
-
-      // case "category":
-      //   const category_ = cellValue as Brand;
-      //   return (
-      //     <Tooltip
-      //       content={category_ ? category_.name : "Unknown"}
-      //       placement="top"
-      //       trigger={isLongText ? "focus" : undefined}
-      //     >
-      //       <div
-      //         style={{
-      //           whiteSpace: "nowrap",
-      //           overflow: "hidden",
-      //           textOverflow: "ellipsis",
-      //           maxWidth: "200px",
-      //         }}
-      //       >
-      //         {category_ ? (
-      //           <div>
-      //             {category_.name}
-      //             <p className="text-xs text-gray-500">{category_._id}</p>
-      //             <br /> {/* Xuống dòng */}
-      //           </div>
-      //         ) : (
-      //           "Unknown"
-      //         )}
-      //       </div>
-      //     </Tooltip>
-      //   );
-
       case "actions":
         return (
           <div className="relative flex justify-end items-center gap-2">
